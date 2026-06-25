@@ -1,55 +1,30 @@
-const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes } = require('discord.js');
-const express = require('express');
+const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
 
-// --- EXPRESS SERVER (Keeps your bot alive on Render) ---
-const app = express();
-const PORT = process.env.PORT || 10000;
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+client.commands = new Collection();
 
-app.get('/', (req, res) => res.send('Shadow is active!'));
-app.listen(PORT, '0.0.0.0', () => console.log(`Web server running on port ${PORT}`));
+// --- COMMAND LOADER ---
+const foldersPath = path.join(__dirname, 'commands');
+const commandFolders = fs.readdirSync(foldersPath);
 
-// --- DISCORD CLIENT INITIALIZATION ---
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ]
-});
-
-// --- SLASH COMMAND REGISTRATION ---
-client.once('ready', async () => {
-    console.log(`Successfully logged in as ${client.user.tag}!`);
-
-    const commands = [
-        { name: 'ping', description: 'Checks the bot latency.' }
-    ];
-
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
-    try {
-        await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-        console.log('Successfully registered slash commands.');
-    } catch (error) {
-        console.error('Error registering commands:', error);
+for (const folder of commandFolders) {
+    const commandsPath = path.join(foldersPath, folder);
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    for (const file of commandFiles) {
+        const command = require(path.join(commandsPath, file));
+        client.commands.set(command.data.name, command);
     }
-});
+}
 
-// --- INTERACTION HANDLER ---
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
-
-    if (interaction.commandName === 'ping') {
-        const pingEmbed = new EmbedBuilder()
-            .setColor(0x2F3136)
-            .setTitle('🏓 Pong!')
-            .setDescription(`**Latency:** ${client.ws.ping}ms`)
-            .setTimestamp()
-            .setFooter({ text: 'Shadow Bot System' });
-
-        await interaction.reply({ embeds: [pingEmbed] });
-    }
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    try { await command.execute(interaction); } 
+    catch (error) { console.error(error); await interaction.reply({ content: 'Error!', ephemeral: true }); }
 });
 
-// --- LOGIN ---
 client.login(process.env.TOKEN);
