@@ -1,6 +1,19 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const express = require('express');
 
-// Initialize client with necessary intents
+// Setup Web Server for Render
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+    res.send('Shadow is alive!');
+});
+
+app.listen(PORT, () => {
+    console.log(`Web server running on port ${PORT}`);
+});
+
+// Setup Discord Bot
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -9,9 +22,9 @@ const client = new Client({
     ]
 });
 
-// Bot login using the environment variable you set in Render
 client.once('ready', () => {
-    console.log(`Successfully logged in as ${client.user.tag}!`);
+    console.log(`Shadow (ID: ${process.env.CLIENT_ID}) is logged in!`);
 });
 
-client.login(process.env.DISCORD_TOKEN);
+// Replace 'TOKEN' with your actual env variable key
+client.login(process.env.TOKEN);
