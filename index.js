@@ -1,15 +1,14 @@
-require('dotenv').config(); // Local testing support
 const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes } = require('discord.js');
 const express = require('express');
 
-// 1. EXPRESS SERVER (Keeps your bot alive on Render)
+// --- EXPRESS SERVER (Keeps your bot alive on Render) ---
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => res.send('Shadow is active!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Web server running on port ${PORT}`));
 
-// 2. DISCORD CLIENT INITIALIZATION
+// --- DISCORD CLIENT INITIALIZATION ---
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -18,8 +17,8 @@ const client = new Client({
     ]
 });
 
-// 3. SLASH COMMAND REGISTRATION
-client.once('clientReady', async () => {
+// --- SLASH COMMAND REGISTRATION ---
+client.once('ready', async () => {
     console.log(`Successfully logged in as ${client.user.tag}!`);
 
     const commands = [
@@ -36,7 +35,7 @@ client.once('clientReady', async () => {
     }
 });
 
-// 4. INTERACTION HANDLER (Using Embeds)
+// --- INTERACTION HANDLER ---
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -52,5 +51,5 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// 5. LOGIN
+// --- LOGIN ---
 client.login(process.env.TOKEN);
