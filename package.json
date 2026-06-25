@@ -1,7 +1,6 @@
 {
   "name": "shadow-bot",
   "version": "1.0.0",
-  "description": "Shadow Bot with Moderation, Economy, and Tickets",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
