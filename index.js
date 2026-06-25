@@ -1,9 +1,23 @@
-const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, EmbedBuilder } = require('discord.js');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// --- EXPRESS SERVER (Keeps Render Alive) ---
+const app = express();
+const PORT = process.env.PORT || 10000;
+app.get('/', (req, res) => res.send('Shadow is active!'));
+app.listen(PORT, '0.0.0.0', () => console.log(`Web server active on port ${PORT}`));
+
+// --- BOT SETUP ---
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent
+    ] 
+});
+
 client.commands = new Collection();
 
 // --- COMMAND LOADER ---
@@ -19,12 +33,20 @@ for (const folder of commandFolders) {
     }
 }
 
+// --- INTERACTION HANDLER ---
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-    try { await command.execute(interaction); } 
-    catch (error) { console.error(error); await interaction.reply({ content: 'Error!', ephemeral: true }); }
+    // 1. Slash Command Logic
+    if (interaction.isChatInputCommand()) {
+        const command = client.commands.get(interaction.commandName);
+        if (!command) return;
+        try { await command.execute(interaction); } 
+        catch (error) { console.error(error); await interaction.reply({ content: 'Error!', ephemeral: true }); }
+    }
+    // 2. Ticket Dropdown Logic (Will be added in your ticket files)
+    else if (interaction.isStringSelectMenu()) {
+        // Handle your ticket interactions here later
+    }
 });
 
+client.once('ready', () => console.log(`Logged in as ${client.user.tag}!`));
 client.login(process.env.TOKEN);
