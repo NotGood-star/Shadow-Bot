@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,37 +16,43 @@ module.exports = {
         const minutes = interaction.options.getInteger('minutes');
         const messageText = interaction.options.getString('message');
         
-        // Calculate the exact Unix timestamp for when the timer should end
+        // Calculate the future Unix timestamp
         const endTime = Math.floor(Date.now() / 1000) + (minutes * 60);
 
-        // Your specific animated emojis
+        // Your animated emojis
         const clockAnim = '<a:Clock:1519928937361178784>';
         const timerAnim = '<a:Timer:1519928783447265432>';
 
-        // 1. Initial Embed (Timer Running)
+        // Initial Embed
         const embed = new EmbedBuilder()
             .setTitle(`${timerAnim} Timer ${timerAnim}`)
             .setDescription(`**${messageText}**\n\n${clockAnim} Ends : <t:${endTime}:R>`)
-            .setColor('#00b0f4') // Blue side color
+            .setColor('#00b0f4')
             .setFooter({ text: `Timer started | ${new Date().toLocaleTimeString()}` });
 
         const msg = await interaction.channel.send({ embeds: [embed] });
-        await interaction.reply({ content: 'Timer started!', ephemeral: true });
+        
+        // Use MessageFlags.Ephemeral to satisfy modern Discord.js requirements
+        await interaction.reply({ 
+            content: 'Timer started!', 
+            flags: MessageFlags.Ephemeral 
+        });
 
-        // 2. Logic to wait until the EXACT moment the timer ends
-        // We use (minutes * 60 * 1000) to get the correct millisecond delay
+        // Calculate time until execution in milliseconds
+        const durationInMs = minutes * 60 * 1000;
+
         setTimeout(async () => {
             try {
                 const endedEmbed = new EmbedBuilder()
                     .setTitle(`${timerAnim} Timer Ended ${timerAnim}`)
-                    .setDescription(`**${messageText}**\n\n${clockAnim} Timer ended at <t:${endTime}:t> ${clockAnim}`)
-                    .setColor('#00b0f4') // Consistent blue side color
+                    .setDescription(`**${messageText}**\n\n⏰ Timer ended at <t:${endTime}:t> ⏰`)
+                    .setColor('#00b0f4')
                     .setFooter({ text: `Timer Ended` });
 
                 await msg.edit({ embeds: [endedEmbed] });
             } catch (err) {
-                console.error('Error editing timer message:', err);
+                console.error('Failed to update timer:', err);
             }
-        }, minutes * 60 * 1000); 
+        }, durationInMs);
     },
 };
